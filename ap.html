@@ -734,7 +734,7 @@
         generateCaptcha();
 
         // Form submission
-        document.getElementById('contactForm').addEventListener('submit', function(e) {
+        document.getElementById('contactForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const userAnswer = parseInt(document.getElementById('captchaAnswer').value);
@@ -746,31 +746,42 @@
                 return;
             }
 
-            // Collect form data
-            const formData = new FormData(this);
-            const data = Object.fromEntries(formData);
-            
-            // Create mailto link with form data
-            const subject = encodeURIComponent(`Business Inquiry from ${data.name}`);
-            const body = encodeURIComponent(`
-Name: ${data.name}
-Email: ${data.email}
-Company: ${data.company || 'Not specified'}
-Service: ${data.service || 'Not specified'}
-Message: ${data.message}
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Sending...';
+            submitBtn.disabled = true;
 
----
-This message was sent through the Nirvijay & Co contact form.
-            `);
-            
-            const mailtoLink = `mailto:-----@gmail.com?subject=${subject}&body=${body}`;
-            window.location.href = mailtoLink;
-            
-            // Reset form and captcha
-            this.reset();
-            generateCaptcha();
-            
-            alert('Thank you for your message! Your email client should open shortly. We\'ll get back to you within 24 hours.');
+            try {
+                // Collect form data
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData);
+                
+                // Send to Vercel function
+                const response = await fetch('/api/contact', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    alert('Thank you for your message! We\'ll get back to you within 24 hours.');
+                    // Reset form and captcha
+                    this.reset();
+                    generateCaptcha();
+                } else {
+                    throw new Error('Failed to send message');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Sorry, there was an error sending your message. Please try again or contact us directly via email.');
+            } finally {
+                // Reset button
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
         });
 
         // Add animation on scroll
