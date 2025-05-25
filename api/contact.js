@@ -27,7 +27,7 @@ export default async function handler(req, res) {
     // You'll set up the API key in Vercel environment variables
     
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
-    const YOUR_EMAIL = process.env.YOUR_EMAIL || 'nirvijayco@gmail.com'; // Replace with your actual email
+    const YOUR_EMAIL = process.env.YOUR_EMAIL || 'aryapodar@gmail.com'; // Replace with your actual email
 
     if (!RESEND_API_KEY) {
       console.log('Contact form submission (email service not configured yet):', {
