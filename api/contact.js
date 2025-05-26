@@ -1,5 +1,6 @@
-// Serverless function to handle contact form submissions
 export default async function handler(req, res) {
+  console.log('Contact function called with method:', req.method);
+  
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -15,64 +16,56 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { name, email, company, service, message } = req.body;
-
-  // Basic validation
-  if (!name || !email || !message) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-
   try {
-    // For now, we'll use Resend email service
-    // You'll set up the API key in Vercel environment variables
+    console.log('Request body:', req.body);
+    console.log('Request headers:', req.headers);
     
-    const RESEND_API_KEY = process.env.RESEND_API_KEY;
-    const YOUR_EMAIL = process.env.YOUR_EMAIL || 'aryapodar@gmail.com'; // Replace with your actual email
+    // Check if body exists and is parsed
+    if (!req.body) {
+      console.log('No request body found');
+      return res.status(400).json({ error: 'No data received' });
+    }
 
-    if (!RESEND_API_KEY) {
-      console.log('Contact form submission (email service not configured yet):', {
-        name, email, company, service, message
+    const { name, email, company, service, message } = req.body;
+    
+    console.log('Extracted fields:', { name, email, company, service, message });
+
+    // Basic validation
+    if (!name || !email || !message) {
+      console.log('Validation failed:', { 
+        hasName: !!name, 
+        hasEmail: !!email, 
+        hasMessage: !!message 
       });
-      return res.status(200).json({ 
-        success: true, 
-        message: 'Message received (email service setup pending)'
+      return res.status(400).json({ 
+        error: 'Missing required fields: name, email, and message are required'
       });
     }
 
-    // Send email using Resend
-    const emailResponse = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: 'Contact Form <noreply@yourdomain.com>', // You'll update this later
-        to: [YOUR_EMAIL],
-        subject: `New Business Inquiry from ${name}`,
-        html: `
-          <h2>New Contact Form Submission</h2>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Company:</strong> ${company || 'Not specified'}</p>
-          <p><strong>Service:</strong> ${service || 'Not specified'}</p>
-          <p><strong>Message:</strong></p>
-          <p>${message.replace(/\n/g, '<br>')}</p>
-          <hr>
-          <p><small>This message was sent through the Nirvijay & Co contact form.</small></p>
-        `,
-        reply_to: email
-      }),
+    // Log successful submission
+    console.log('✅ Contact form submission received:', {
+      name,
+      email,
+      company: company || 'Not provided',
+      service: service || 'Not specified',
+      messageLength: message.length,
+      timestamp: new Date().toISOString()
     });
 
-    if (!emailResponse.ok) {
-      throw new Error('Failed to send email');
-    }
-
-    res.status(200).json({ success: true, message: 'Message sent successfully' });
+    // Send success response
+    res.status(200).json({ 
+      success: true, 
+      message: 'Your message has been received! We will get back to you within 24 hours.',
+      timestamp: new Date().toISOString()
+    });
     
   } catch (error) {
-    console.error('Error processing contact form:', error);
-    res.status(500).json({ error: 'Failed to send message' });
+    console.error('❌ Error in contact function:', error);
+    console.error('Error stack:', error.stack);
+    
+    res.status(500).json({ 
+      error: 'Server error occurred',
+      message: 'Please try again or contact us directly via email'
+    });
   }
 }
