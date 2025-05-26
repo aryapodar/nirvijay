@@ -4,10 +4,16 @@
       "maxDuration": 10
     }
   },
-  "rewrites": [
+  "buildCommand": "echo 'No build required'",
+  "outputDirectory": ".",
+  "routes": [
     {
-      "source": "/",
-      "destination": "/index.html"
+      "src": "/",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
     }
   ]
 }
